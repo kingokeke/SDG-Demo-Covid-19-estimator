@@ -12,27 +12,72 @@ const computeNumberOfDays = (period, number) => {
   if (period.toLowerCase().includes('week')) {
     return number * 7;
   }
-  return result;
+  return number;
 };
 
 // Compute impact estimation for both normal and severe outlooks
 const computeImpactEstimations = (data, type) => {
-  const CURRENTLY_INFECTED_MULTIPLIER = type === 'severe' ? 50 : 10;
-  const CURRENT_DOUBLING_RATE = 3;
+  const CURRENT_DOUBLING_RATE = 3; // Total no of infections doubles every 3 days
+  const FRACTION_OF_SEVERE_CASES = 0.15; // 15 percent
+  const FRACTION_OF_BEDS_AVAILABLE = 0.35; // 35 percent
+  const FRACTION_OF_ICU_PATIENTS = 0.05; // 5 percent
+  const FRACTION_OF_VENTILATOR_PATIENTS = 0.02; // 2 percent
+  const INFECTION_TYPE_MULTIPLIER = type === 'severe' ? 50 : 10; // Multiplier for normal and severe cases
 
-  const { reportedCases, periodType, timeToElapse } = data;
+  const {
+    reportedCases,
+    periodType,
+    timeToElapse,
+    totalHospitalBeds,
+    region: { avgDailyIncomeInUSD, avgDailyIncomePopulation }
+  } = data;
 
-  const currentlyInfected = reportedCases * CURRENTLY_INFECTED_MULTIPLIER;
+  const currentlyInfected = reportedCases * INFECTION_TYPE_MULTIPLIER;
+
   const infectionFactor = getInfectionFactor(
     periodType,
     timeToElapse,
     CURRENT_DOUBLING_RATE
   );
+
   const infectionsByRequestedTime = currentlyInfected * infectionFactor;
+
+  const severeCasesByRequestedTime = Math.trunc(
+    infectionsByRequestedTime * FRACTION_OF_SEVERE_CASES
+  );
+
+  const availableBeds = Math.trunc(
+    totalHospitalBeds * FRACTION_OF_BEDS_AVAILABLE
+  );
+
+  const hospitalBedsByRequestedTime =
+    availableBeds - severeCasesByRequestedTime;
+
+  const casesForICUByRequestedTime = Math.trunc(
+    infectionsByRequestedTime * FRACTION_OF_ICU_PATIENTS
+  );
+
+  const casesForVentilatorsByRequestedTime = Math.trunc(
+    severeCasesByRequestedTime * FRACTION_OF_VENTILATOR_PATIENTS
+  );
+
+  const requestedTime = computeNumberOfDays(periodType, timeToElapse);
+
+  const dollarsInFlight = Math.trunc(
+    (infectionsByRequestedTime *
+      avgDailyIncomeInUSD *
+      avgDailyIncomePopulation) /
+      requestedTime
+  );
 
   return {
     currentlyInfected,
-    infectionsByRequestedTime
+    infectionsByRequestedTime,
+    severeCasesByRequestedTime,
+    hospitalBedsByRequestedTime,
+    casesForICUByRequestedTime,
+    casesForVentilatorsByRequestedTime,
+    dollarsInFlight
   };
 };
 
