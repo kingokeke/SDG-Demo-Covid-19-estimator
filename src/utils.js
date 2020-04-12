@@ -1,9 +1,3 @@
-// Compute the factor by which infections have doubled over the given timeframe
-const getInfectionFactor = (timeFrame, number, interval) => {
-  const numberOfDays = computeNumberOfDays(timeFrame, number);
-  return Math.pow(2, Math.trunc(numberOfDays / interval));
-};
-
 // Normalize the time period to days
 const computeNumberOfDays = (period, number) => {
   if (period.toLowerCase().includes('month')) {
@@ -13,6 +7,12 @@ const computeNumberOfDays = (period, number) => {
     return number * 7;
   }
   return number;
+};
+
+// Compute the factor by which infections have doubled over the given timeframe
+const getInfectionFactor = (timeFrame, number, interval) => {
+  const numberOfDays = computeNumberOfDays(timeFrame, number);
+  return 2 ** Math.trunc(numberOfDays / interval);
 };
 
 // Compute impact estimation for both normal and severe outlooks
@@ -52,8 +52,7 @@ const computeImpactEstimations = (data, type) => {
     totalHospitalBeds * FRACTION_OF_BEDS_AVAILABLE
   );
 
-  const hospitalBedsByRequestedTime =
-    availableBeds - severeCasesByRequestedTime;
+  const hospitalBedsByRequestedTime = availableBeds - severeCasesByRequestedTime;
 
   const casesForICUByRequestedTime = Math.trunc(
     infectionsByRequestedTime * FRACTION_OF_ICU_PATIENTS
@@ -66,10 +65,10 @@ const computeImpactEstimations = (data, type) => {
   const requestedTime = computeNumberOfDays(periodType, timeToElapse);
 
   const dollarsInFlight = Math.trunc(
-    (infectionsByRequestedTime *
-      avgDailyIncomeInUSD *
-      avgDailyIncomePopulation) /
-      requestedTime
+    (infectionsByRequestedTime
+      * avgDailyIncomeInUSD
+      * avgDailyIncomePopulation)
+      / requestedTime
   );
 
   return {
