@@ -40,7 +40,9 @@ const computeImpactEstimations = (data, type) => {
     CURRENT_DOUBLING_RATE
   );
 
-  const infectionsByRequestedTime = currentlyInfected * infectionFactor;
+  const infectionsByRequestedTime = Math.trunc(
+    currentlyInfected * infectionFactor
+  );
 
   const severeCasesByRequestedTime = Math.trunc(
     infectionsByRequestedTime * FRACTION_OF_SEVERE_CASES
@@ -58,7 +60,7 @@ const computeImpactEstimations = (data, type) => {
   );
 
   const casesForVentilatorsByRequestedTime = Math.trunc(
-    severeCasesByRequestedTime * FRACTION_OF_VENTILATOR_PATIENTS
+    infectionsByRequestedTime * FRACTION_OF_VENTILATOR_PATIENTS
   );
 
   const requestedTime = computeNumberOfDays(periodType, timeToElapse);
